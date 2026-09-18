@@ -1,6 +1,8 @@
 # PI 프로세스 캔버스
 
-PI·E2E 재설계 교육용 프로세스 작성 툴. 결과물은 **HTML 파일 하나**(`dist/pi-canvas.html`)이고, 설치·서버·인터넷 없이 Edge에서 더블클릭으로 실행된다.
+PI·E2E 재설계 교육용 프로세스 작성 툴. 결과물은 **HTML 파일 하나**([`release/pi-canvas.html`](release/pi-canvas.html))이고, 설치·서버·인터넷 없이 Edge에서 더블클릭으로 실행된다.
+
+> **배포할 파일은 `release/pi-canvas.html` 하나뿐이다.** npm·서버는 개발할 때만 필요하다. GitHub에서는 파일을 연 뒤 [Download raw file] 버튼으로 받는다.
 
 - 기획서: [docs/기획서.md](docs/기획서.md)
 - 교육생 배포 안내문: [docs/배포안내.md](docs/배포안내.md)
@@ -18,7 +20,7 @@ Node 24 이상.
 npm install
 npm run dev        # 개발 서버 (http://localhost:5173)
 npm test           # 단위 테스트
-npm run build      # → dist/pi-canvas.html
+npm run build      # → release/pi-canvas.html (배포용, 저장소에 포함)
 node scripts/smoke.mjs   # 빌드 결과를 실제 브라우저로 열어 사전과제 흐름 전체 점검 (Playwright)
 ```
 
@@ -30,7 +32,7 @@ node scripts/smoke.mjs   # 빌드 결과를 실제 브라우저로 열어 사전
 
 1. `src/config/taxonomy.ts` 의 `tree` 를 확정본으로 바꾼다.
 2. `id` 를 새 값으로 바꾸고(예: `hr-edu-2026-09`), 자유 입력을 막으려면 `allowCustom: false`.
-3. `npm run build` 후 `dist/pi-canvas.html` 을 배포한다.
+3. `npm run build` 후 갱신된 `release/pi-canvas.html` 을 커밋·배포한다.
 
 파일에는 L1–L3의 **코드와 이름**이 함께 저장되므로, 체계를 바꿔도 이미 제출된 파일은 그대로 열린다.
 
