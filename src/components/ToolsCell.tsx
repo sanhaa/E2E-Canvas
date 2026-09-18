@@ -30,7 +30,7 @@ export function ToolsCell({ tools, knownCustom, onChange, rowId }: Props) {
     if (t && !tools.includes(t)) onChange([...tools, t])
     setDraft('')
   }
-  const suggestions = knownCustom.filter((t) => !(PRESET_TOOLS as readonly string[]).includes(t))
+  const suggestions = knownCustom.filter((t) => !PRESET_TOOLS.includes(t))
 
   return (
     <div className="tools-cell" ref={ref}>
@@ -54,9 +54,9 @@ export function ToolsCell({ tools, knownCustom, onChange, rowId }: Props) {
               </button>
             ))}
           </div>
-          {(suggestions.length > 0 || tools.some((t) => !(PRESET_TOOLS as readonly string[]).includes(t))) && (
+          {(suggestions.length > 0 || tools.some((t) => !PRESET_TOOLS.includes(t))) && (
             <div className="tools-group">
-              {[...new Set([...suggestions, ...tools.filter((t) => !(PRESET_TOOLS as readonly string[]).includes(t))])].map((t) => (
+              {[...new Set([...suggestions, ...tools.filter((t) => !PRESET_TOOLS.includes(t))])].map((t) => (
                 <button type="button" key={t} className={`chip-toggle custom ${tools.includes(t) ? 'on' : ''}`} onClick={() => toggle(t)}>
                   {t}
                 </button>

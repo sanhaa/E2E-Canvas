@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TAXONOMY } from './config/taxonomy'
+import { TAXONOMY } from './config/settings'
 import { exampleDoc } from './example'
 import {
   APP_VERSION, COMMON_DEPTS, PRESET_TOOLS, emptyActivity, isBlankActivity, newDoc, newId, resolvePending, validate,
@@ -200,7 +200,7 @@ export default function App() {
   const acts = active.process.activities
   const filled = acts.filter((a) => !isBlankActivity(a))
   const deptOptions = [...new Set([...acts.map((a) => a.dept.trim()).filter(Boolean), ...COMMON_DEPTS])]
-  const knownCustomTools = [...new Set(acts.flatMap((a) => a.tools))].filter((t) => !(PRESET_TOOLS as readonly string[]).includes(t))
+  const knownCustomTools = [...new Set(acts.flatMap((a) => a.tools))].filter((t) => !PRESET_TOOLS.includes(t))
   const lanes = new Set(filled.map((a) => a.dept.trim()).filter(Boolean))
   const decisions = filled.filter((a) => a.kind === 'decision').length
 

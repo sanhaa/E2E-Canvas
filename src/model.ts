@@ -1,3 +1,5 @@
+import { SETTINGS } from './config/settings'
+
 /**
  * 파일 포맷 v1 (R1에서 고정). R2·R3는 필드를 "추가"만 하고 기존 필드 의미는 바꾸지 않는다.
  */
@@ -63,12 +65,9 @@ export interface PiDoc {
 
 export const END = 'END'
 
-export const PRESET_TOOLS = ['메일', '엑셀', '전화', '메신저', '대면', '종이/출력', '전자결재', 'HRIS'] as const
-
-export const COMMON_DEPTS = [
-  '인사팀', '현업 부서', '현업 팀장', '지원자', '입사자', '임직원', '경영진',
-  'IT', '총무', '재무', '법무', '외부기관',
-]
+// 아래 목록·기준값은 config/설정.md 에서 온다
+export const PRESET_TOOLS: readonly string[] = SETTINGS.presetTools
+export const COMMON_DEPTS: readonly string[] = SETTINGS.commonDepts
 
 export function newId(): string {
   return 'a' + Math.random().toString(36).slice(2, 9)
@@ -178,8 +177,8 @@ export interface Issue {
   rowId?: string
 }
 
-export const RECOMMENDED_MIN = 8
-export const RECOMMENDED_MAX = 20
+export const RECOMMENDED_MIN = SETTINGS.recommendedMin
+export const RECOMMENDED_MAX = SETTINGS.recommendedMax
 
 export function activityNameHint(name: string): string | null {
   const n = name.trim()

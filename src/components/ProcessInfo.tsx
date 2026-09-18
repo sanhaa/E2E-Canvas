@@ -1,4 +1,4 @@
-import { TAXONOMY, type TaxNode } from '../config/taxonomy'
+import { TAXONOMY, type TaxNode } from '../config/settings'
 import type { Issue, PiDoc, TaxRef } from '../model'
 
 interface Props {

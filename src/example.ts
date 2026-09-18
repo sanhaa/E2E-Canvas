@@ -1,5 +1,5 @@
 import { END, FORMAT, FORMAT_VERSION, APP_VERSION, type Activity, type PiDoc } from './model'
-import { TAXONOMY } from './config/taxonomy'
+import { TAXONOMY } from './config/settings'
 
 /** 교육생이 수준을 맞출 수 있도록 제공하는 완성 예시: 경력 채용 › 채용 요청·공고 */
 export function exampleDoc(): PiDoc {
@@ -22,8 +22,9 @@ export function exampleDoc(): PiDoc {
   ]
 
   const now = new Date().toISOString()
-  const l1 = TAXONOMY.tree.find((n) => n.code === 'HR')
-  const l2 = l1?.children?.find((n) => n.code === 'HR.02')
+  // 설정.md 체계에 같은 이름이 있으면 그 코드를 쓰고, 없으면 직접 입력 항목으로 표시
+  const l1 = TAXONOMY.tree.find((n) => n.name === '인사')
+  const l2 = l1?.children?.find((n) => n.name === '채용')
   const l3 = l2?.children?.find((n) => n.name === '경력 채용')
   return {
     format: FORMAT,
