@@ -1,5 +1,5 @@
 import { TAXONOMY, type TaxNode } from '../config/settings'
-import type { Issue, PiDoc, TaxRef } from '../model'
+import { findTaxNode, type Issue, type PiDoc, type TaxRef } from '../model'
 
 interface Props {
   doc: PiDoc
@@ -16,9 +16,8 @@ export function ProcessInfo({ doc, issues, onMeta, onTaxonomy, onProcess }: Prop
   const cls = (field: string) => (warned.has(field) ? 'has-warn' : '')
 
   const { l1, l2, l3 } = doc.taxonomy
-  const find = (list: TaxNode[] | undefined, ref: TaxRef | null) => (ref?.code ? list?.find((n) => n.code === ref.code) : undefined)
-  const n1 = find(TAXONOMY.tree, l1)
-  const n2 = find(n1?.children, l2)
+  const n1 = findTaxNode(TAXONOMY.tree, l1)
+  const n2 = findTaxNode(n1?.children, l2)
 
   const level = (
     key: 'l1' | 'l2' | 'l3',

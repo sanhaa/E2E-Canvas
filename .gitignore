@@ -4,3 +4,6 @@ dist/
 
 # Windows가 다운로드 파일에 붙이는 부가 정보
 *:Zone.Identifier
+
+# 과제 양식 원본 (저장소에 포함하지 않음)
+EXP14.xlsx

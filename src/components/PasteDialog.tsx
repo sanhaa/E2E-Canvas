@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { Activity } from '../model'
-import { guessColumns, parseTSV, ROLE_LABELS, rowsToActivities, type ColumnRole, type PasteGuess } from '../pasteImport'
+import { extractEvents, guessColumns, parseTSV, ROLE_LABELS, rowsToActivities, type ColumnRole, type PasteGuess } from '../pasteImport'
 import { Modal } from './Modal'
 
 interface Props {
   initialText: string
   hasExisting: boolean
-  onApply: (acts: Activity[], mode: 'append' | 'replace') => void
+  onApply: (acts: Activity[], mode: 'append' | 'replace', events: { startEvent: string; endEvent: string }) => void
   onClose: () => void
 }
 
@@ -21,10 +21,13 @@ export function PasteDialog({ initialText, hasExisting, onApply, onClose }: Prop
   const width = Math.max(0, ...rows.map((r) => r.length))
   const body = guess.hasHeader ? rows.slice(1) : rows
   const hasName = guess.roles.includes('name')
+  // '시작'/'종료' 표시 행은 활동으로 만들어지지 않으므로, 버튼에 보이는 행 수는 붙여넣은 표 자체(body)가 아니라
+  // 실제로 몇 개의 활동이 생기는지로 보여준다.
+  const importCount = useMemo(() => rowsToActivities(rows, guess).length, [rows, guess])
 
   const apply = (mode: 'append' | 'replace') => {
-    const acts = rowsToActivities(rows, guess).filter((a) => a.name || a.dept)
-    if (acts.length) onApply(acts, mode)
+    const acts = rowsToActivities(rows, guess).filter((a) => a.name)
+    if (acts.length) onApply(acts, mode, extractEvents(rows, guess))
   }
 
   return (
@@ -37,7 +40,7 @@ export function PasteDialog({ initialText, hasExisting, onApply, onClose }: Prop
         className="paste-area"
         value={text}
         autoFocus={!initialText}
-        placeholder={'부서\t담당자\t활동명\t시스템/도구\n현업 부서\t팀장\t채용 요청서 작성\t엑셀, 메일'}
+        placeholder={'담당자\t활동명\t시스템/프로그램\n팀장\t채용 요청서 작성\t엑셀, 메일'}
         onChange={(e) => setText(e.target.value)}
       />
       {rows.length > 0 && (
@@ -90,12 +93,12 @@ export function PasteDialog({ initialText, hasExisting, onApply, onClose }: Prop
       <div className="modal-actions">
         <button type="button" onClick={onClose}>취소</button>
         {hasExisting && (
-          <button type="button" disabled={!hasName || body.length === 0} onClick={() => apply('replace')}>
+          <button type="button" disabled={!hasName || importCount === 0} onClick={() => apply('replace')}>
             기존 목록을 지우고 가져오기
           </button>
         )}
-        <button type="button" className="primary" disabled={!hasName || body.length === 0} onClick={() => apply('append')}>
-          {body.length}행 {hasExisting ? '뒤에 추가' : '가져오기'}
+        <button type="button" className="primary" disabled={!hasName || importCount === 0} onClick={() => apply('append')}>
+          {importCount}행 {hasExisting ? '뒤에 추가' : '가져오기'}
         </button>
       </div>
     </Modal>

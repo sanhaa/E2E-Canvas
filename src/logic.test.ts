@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { END, emptyActivity, formatNext, newDoc, parseNextText, resolvePending, seqMaps, validate, type Activity } from './model'
-import { guessColumns, parseTSV, parseTools, rowsToActivities } from './pasteImport'
+import { extractEvents, guessColumns, parseTSV, parseTools, rowsToActivities } from './pasteImport'
 import { deserialize, serialize, suggestFileName, FileFormatError } from './storage'
 import { layoutFlow } from './layout'
 import { exampleDoc } from './example'
 
-const act = (id: string, over: Partial<Activity> = {}): Activity => ({ ...emptyActivity(), id, dept: '인사팀', name: `${id} 활동 처리`, ...over })
+const act = (id: string, over: Partial<Activity> = {}): Activity => ({ ...emptyActivity(), id, performer: '채용담당', name: `${id} 활동 처리`, ...over })
 
 describe('다음 단계 파싱', () => {
   const rows = [act('a'), act('b'), act('c')]
@@ -57,6 +57,18 @@ describe('검증', () => {
     const hints = validate(d).filter((i) => i.level === 'hint' && i.field === 'row.name').map((i) => i.rowId)
     expect(hints).toEqual(expect.arrayContaining(['ex01', 'ex02']))
   })
+
+  it('삭제된 행을 가리키는 다음 단계는 경고한다', () => {
+    const d = exampleDoc()
+    d.process.activities[1] = { ...d.process.activities[1], next: [{ to: '유령행' }] }
+    expect(validate(d).some((i) => i.rowId === 'ex02' && i.field === 'row.next' && i.level === 'warn')).toBe(true)
+  })
+
+  it('체계에 없는 코드를 가리키는 L1–L3 는 경고한다', () => {
+    const d = exampleDoc()
+    d.taxonomy.l1 = { code: '체계에없는코드', name: d.taxonomy.l1!.name }
+    expect(validate(d).some((i) => i.field === 'tax.l1' && i.level === 'warn')).toBe(true)
+  })
 })
 
 describe('엑셀 붙여넣기', () => {
@@ -65,26 +77,56 @@ describe('엑셀 붙여넣기', () => {
   })
 
   it('헤더를 인식해 열을 매핑한다', () => {
-    const rows = parseTSV('No\t부서\t담당자\t활동명(명사+동사)\t시스템\t다음 단계\t비고\n1\t현업\t팀장\t요청서 작성\t엑셀, 이메일\t\t\n2\t인사팀\t채용담당\t승인 여부 판단\tHRIS\t승인→3, 반려→1\t\n3\t인사팀\t채용담당\t공고 게시\t채용사이트\t\t')
+    const rows = parseTSV('No\t담당자\t활동명(명사+동사)\t시스템/프로그램\tInput\tOutput\t다음 단계\t비고\n1\t팀장\t요청서 작성\t엑셀, 이메일\t\t요청서\t\t\n2\t채용담당\t승인 여부 판단\tHRIS\t요청서\t\t승인→3, 반려→1\t\n3\t채용담당\t공고 게시\t채용사이트\t\t\t\t')
     const g = guessColumns(rows)
     expect(g.hasHeader).toBe(true)
-    expect(g.roles).toEqual(['seq', 'dept', 'performer', 'name', 'tools', 'next', 'note'])
+    expect(g.roles).toEqual(['seq', 'performer', 'name', 'tools', 'input', 'output', 'next', 'note'])
     const acts = rowsToActivities(rows, g)
     expect(acts).toHaveLength(3)
     expect(acts[0].tools).toEqual(['엑셀', '메일'])
+    expect(acts[0].output).toBe('요청서')
+    expect(acts[1].input).toBe('요청서')
     expect(acts[1].kind).toBe('decision') // 조건 달린 분기 → 판단으로 추정
     expect(acts[1].next).toEqual([{ to: acts[2].id, label: '승인' }, { to: acts[0].id, label: '반려' }])
   })
 
   it('데이터 행을 헤더로 오인하지 않는다', () => {
-    const rows = parseTSV('인사팀\t채용담당\t업무 협의\n현업\t팀장\t요청서 작성')
+    const rows = parseTSV('채용담당\t업무 협의\t엑셀\n팀장\t요청서 작성\t메일')
     const g = guessColumns(rows)
     expect(g.hasHeader).toBe(false)
-    expect(g.roles).toEqual(['dept', 'name', 'tools'])
+    expect(g.roles).toEqual(['performer', 'name', 'tools'])
   })
 
   it('도구 별칭을 표준 이름으로 바꾼다', () => {
     expect(parseTools('Excel / e-mail / 종이·결재, SAP')).toEqual(['엑셀', '메일', '종이/출력', '전자결재', 'SAP'])
+  })
+
+  it('Task별 프로세스 정리 양식: 설명 셀 안 화살표 분기와 시작/종료 행을 처리한다', () => {
+    const text = [
+      'No.\t설명\tBDW\tERASK\t담당자\t시스템/프로그램\tInput\tOutput\tERASK To-be',
+      '시작\t장기부재자 안내 메일을 수신한다\t\t\t\t\t\t\t',
+      '01\t명단을 확인한다\t\t\t행정사원\tER\t명단\t리스트\t',
+      '02\t"이상 유무를 판단한다\n→ 이상 없음(No) : 종료\n→ 이상 있음(Yes) : 03번으로 진행"\t\t\t행정사원\t\t\t\t',
+      '03\t결과를 수정한다\t\t\t행정사원\t전용시스템\t\t\t',
+      '종료\t완료되면 종료한다\t\t\t\t\t\t\t',
+    ].join('\n')
+    const rows = parseTSV(text)
+    const g = guessColumns(rows)
+    expect(g.hasHeader).toBe(true)
+    expect(g.roles).toEqual(['seq', 'name', 'ignore', 'ignore', 'performer', 'tools', 'input', 'output', 'ignore'])
+
+    const acts = rowsToActivities(rows, g)
+    expect(acts).toHaveLength(3) // 시작·종료 행은 활동이 아니다
+    expect(acts[0].name).toBe('명단을 확인한다')
+    expect(acts[0].input).toBe('명단')
+    expect(acts[0].output).toBe('리스트')
+    expect(acts[1].kind).toBe('decision') // 라벨 있는 분기 2개 → 판단으로 추정
+    expect(acts[1].next).toEqual([{ to: END, label: '이상 없음(No)' }, { to: acts[2].id, label: '이상 있음(Yes)' }])
+
+    expect(extractEvents(rows, g)).toEqual({
+      startEvent: '장기부재자 안내 메일을 수신한다',
+      endEvent: '완료되면 종료한다',
+    })
   })
 })
 
@@ -118,9 +160,9 @@ describe('파일 저장/열기', () => {
 })
 
 describe('미리보기 레이아웃', () => {
-  it('부서별 레인과 연결선을 만든다', () => {
+  it('담당자별 레인과 연결선을 만든다', () => {
     const L = layoutFlow(exampleDoc().process.activities)
-    expect(L.lanes.map((l) => l.name)).toEqual(['현업 부서', '인사팀', '경영진'])
+    expect(L.lanes.map((l) => l.name)).toEqual(['팀장', '채용담당', '인사 임원'])
     expect(L.nodes.filter((n) => n.kind === 'decision')).toHaveLength(2)
     // 시작→1 + 활동 12개의 연결(판단 2개는 각 2개): 1 + 10 + 4 = 15
     expect(L.edges).toHaveLength(15)

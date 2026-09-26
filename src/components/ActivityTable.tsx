@@ -6,7 +6,7 @@ import { ToolsCell } from './ToolsCell'
 interface Props {
   activities: Activity[]
   issues: Issue[]
-  deptOptions: string[]
+  performerOptions: string[]
   knownCustomTools: string[]
   onPatch: (id: string, patch: Partial<Activity>) => void
   onInsert: (index: number) => string
@@ -16,7 +16,7 @@ interface Props {
   onPasteTable: (text: string) => void
 }
 
-const TEXT_FIELDS = ['row.dept', 'row.performer', 'row.name', 'row.next', 'row.note'] as const
+const TEXT_FIELDS = ['row.performer', 'row.name', 'row.input', 'row.output', 'row.next', 'row.note'] as const
 
 export function focusField(field: string, rowId?: string) {
   const sel = rowId ? `[data-field="${field}"][data-row="${rowId}"]` : `[data-field="${field}"]`
@@ -41,7 +41,7 @@ export function insertAndFocus(insert: () => string, field: string) {
 }
 
 export function ActivityTable(props: Props) {
-  const { activities, issues, deptOptions, knownCustomTools, onPatch, onInsert, onDelete, onMove, onDuplicate, onPasteTable } = props
+  const { activities, issues, performerOptions, knownCustomTools, onPatch, onInsert, onDelete, onMove, onDuplicate, onPasteTable } = props
   const { idToSeq, seqToId } = seqMaps(activities)
 
   const rowIssues = new Map<string, Issue[]>()
@@ -81,22 +81,24 @@ export function ActivityTable(props: Props) {
         <colgroup>
           <col style={{ width: 38 }} />
           <col style={{ width: 88 }} />
-          <col style={{ width: 112 }} />
-          <col style={{ width: 100 }} />
+          <col style={{ width: 104 }} />
           <col />
-          <col style={{ width: 180 }} />
+          <col style={{ width: 160 }} />
+          <col style={{ width: 130 }} />
+          <col style={{ width: 130 }} />
           <col style={{ width: 132 }} />
-          <col style={{ width: 144 }} />
+          <col style={{ width: 140 }} />
           <col style={{ width: 128 }} />
         </colgroup>
         <thead>
           <tr>
             <th>#</th>
             <th>유형</th>
-            <th>부서<span className="req">*</span></th>
             <th>담당자(역할)</th>
             <th>활동명 (명사+동사)<span className="req">*</span></th>
-            <th>시스템/도구</th>
+            <th>시스템/프로그램</th>
+            <th>Input</th>
+            <th>Output</th>
             <th title="비우면 다음 행으로 이어집니다">다음 단계</th>
             <th>비고</th>
             <th aria-label="행 편집" />
@@ -107,7 +109,7 @@ export function ActivityTable(props: Props) {
             const msgs = rowIssues.get(a.id) ?? []
             // 예시 문구는 첫 행과 빈 행에만 — 채워진 행마다 반복되면 입력값처럼 보여 혼란스럽다
             const showExamples = i === 0 || isBlankActivity(a)
-            const text = (field: (typeof TEXT_FIELDS)[number], key: 'dept' | 'performer' | 'name' | 'note', placeholder: string, list?: string) => (
+            const text = (field: (typeof TEXT_FIELDS)[number], key: 'performer' | 'name' | 'input' | 'output' | 'note', placeholder: string, list?: string) => (
               <input
                 className={`cell-input ${cellClass(a.id, field)}`}
                 data-field={field}
@@ -140,12 +142,13 @@ export function ActivityTable(props: Props) {
                     <option value="decision">◇ 판단</option>
                   </select>
                 </td>
-                <td>{text('row.dept', 'dept', '예: 인사팀', 'dept-options')}</td>
-                <td>{text('row.performer', 'performer', '예: 채용담당')}</td>
+                <td>{text('row.performer', 'performer', '예: 채용담당', 'performer-options')}</td>
                 <td>{text('row.name', 'name', a.kind === 'decision' ? '예: 채용 승인 여부 판단' : '예: 채용 요청서 검토')}</td>
                 <td>
                   <ToolsCell rowId={a.id} tools={a.tools} knownCustom={knownCustomTools} onChange={(tools) => onPatch(a.id, { tools })} />
                 </td>
+                <td>{text('row.input', 'input', '예: 채용 요청서')}</td>
+                <td>{text('row.output', 'output', '예: 채용 공고문')}</td>
                 <td className={cellClass(a.id, 'row.next')}>
                   <NextCell
                     rowId={a.id}
@@ -161,7 +164,7 @@ export function ActivityTable(props: Props) {
                 <td className="row-actions">
                   <button type="button" title="위로" disabled={i === 0} onClick={() => onMove(a.id, -1)}>↑</button>
                   <button type="button" title="아래로" disabled={i === activities.length - 1} onClick={() => onMove(a.id, 1)}>↓</button>
-                  <button type="button" title="아래에 행 추가" onClick={() => insertAndFocus(() => onInsert(i + 1), 'row.dept')}>＋</button>
+                  <button type="button" title="아래에 행 추가" onClick={() => insertAndFocus(() => onInsert(i + 1), 'row.performer')}>＋</button>
                   <button type="button" title="행 복제" onClick={() => onDuplicate(a.id)}>⧉</button>
                   <button type="button" title="행 삭제" className="danger" onClick={() => onDelete(a.id)}>✕</button>
                 </td>
@@ -170,8 +173,8 @@ export function ActivityTable(props: Props) {
           })}
         </tbody>
       </table>
-      <datalist id="dept-options">
-        {deptOptions.map((d) => <option key={d} value={d} />)}
+      <datalist id="performer-options">
+        {performerOptions.map((d) => <option key={d} value={d} />)}
       </datalist>
     </div>
   )

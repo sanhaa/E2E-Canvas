@@ -41,7 +41,7 @@ export function ToolsCell({ tools, knownCustom, onChange, rowId }: Props) {
         data-row={rowId}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
-        title="시스템/도구 선택"
+        title="시스템/프로그램 선택"
       >
         {tools.length === 0 ? <span className="placeholder">선택…</span> : tools.map((t) => <span key={t} className="chip">{t}</span>)}
       </button>
@@ -67,7 +67,7 @@ export function ToolsCell({ tools, knownCustom, onChange, rowId }: Props) {
             <input
               value={draft}
               autoFocus
-              placeholder="기타 시스템/도구 (예: SAP, 채용사이트) + Enter"
+              placeholder="기타 시스템/프로그램 (예: SAP, 채용사이트) + Enter"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.nativeEvent.isComposing) return // 한글 조합 중 Enter 중복 방지

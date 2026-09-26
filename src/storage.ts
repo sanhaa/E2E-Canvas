@@ -39,10 +39,11 @@ export function deserialize(text: string): PiDoc {
     ? p.activities.map((a: any) => ({
         id: str(a?.id) || emptyActivity().id,
         kind: a?.kind === 'decision' ? 'decision' : 'task',
-        dept: str(a?.dept),
         performer: str(a?.performer),
         name: str(a?.name),
         tools: Array.isArray(a?.tools) ? a.tools.filter((x: unknown) => typeof x === 'string') : [],
+        input: str(a?.input),
+        output: str(a?.output),
         next: Array.isArray(a?.next)
           ? a.next.filter((n: any) => typeof n?.to === 'string').map((n: any) => (n.label ? { to: n.to, label: String(n.label) } : { to: n.to }))
           : [],
@@ -70,15 +71,18 @@ export function deserialize(text: string): PiDoc {
   }
 }
 
-export function suggestFileName(doc: PiDoc): string {
+export function suggestFileName(doc: PiDoc, ext = 'json'): string {
   const clean = (s: string) => s.trim().replace(/[\\/:*?"<>|\s]+/g, '_').replace(/^_+|_+$/g, '')
   const l4 = clean(doc.process.name) || 'L4프로세스'
   const who = clean(doc.meta.author) || '이름없음'
-  return `${l4}_${who}.json`
+  return `${l4}_${who}.${ext}`
 }
 
 export function downloadText(text: string, fileName: string) {
-  const blob = new Blob([text], { type: 'application/json;charset=utf-8' })
+  downloadBlob(new Blob([text], { type: 'application/json;charset=utf-8' }), fileName)
+}
+
+export function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

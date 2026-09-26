@@ -1,8 +1,7 @@
 import { END, effectiveNext, isBlankActivity, type Activity, type ActivityKind } from './model'
 
 /**
- * R1 읽기 전용 미리보기용 단순 레이아웃: 행 순서 = 열, 부서 = 레인.
- * (R2 편집 캔버스에서는 ELK 자동 배치로 교체 예정)
+ * 자동 배치: 행 순서 = 열, 담당자 = 레인. 편집 캔버스의 [자동 정렬]과 처음 여는 순서도의 초기 배치에 쓴다.
  */
 
 export const G = {
@@ -51,19 +50,21 @@ export interface Layout {
   height: number
 }
 
-const NO_DEPT = '(부서 미입력)'
+export const NO_PERFORMER = '(담당자 미입력)'
 
-export function layoutFlow(all: Activity[]): Layout {
+/** laneOrder: 레인(담당자) 순서를 정해 둔 경우. 목록에 없는 담당자는 처음 등장한 순서대로 뒤에 붙는다. */
+export function layoutFlow(all: Activity[], laneOrder: string[] = []): Layout {
   const acts = all.filter((a) => !isBlankActivity(a))
-  const laneNames: string[] = []
+  const laneNames: string[] = laneOrder.map((n) => n || NO_PERFORMER)
+  // 스윔레인은 담당자(역할) 기준. 서로 다른 담당자가 같은 프로세스를 넘나드는 게 곧 E2E 흐름이다.
   const laneOf = (a: Activity) => {
-    const name = a.dept.trim() || NO_DEPT
+    const name = a.performer.trim() || NO_PERFORMER
     let i = laneNames.indexOf(name)
     if (i < 0) i = laneNames.push(name) - 1
     return i
   }
   const actLanes = acts.map(laneOf)
-  if (laneNames.length === 0) laneNames.push(NO_DEPT)
+  if (laneNames.length === 0) laneNames.push(NO_PERFORMER)
 
   const cy = (lane: number) => lane * G.laneH + G.laneH / 2
   const colX = (col: number) => G.laneLabelW + col * G.colW

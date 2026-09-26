@@ -1,12 +1,13 @@
-import { SETTINGS } from './config/settings'
+import { SETTINGS, TAXONOMY, type TaxNode } from './config/settings'
 
 /**
- * 파일 포맷 v1 (R1에서 고정). R2·R3는 필드를 "추가"만 하고 기존 필드 의미는 바꾸지 않는다.
+ * 파일 포맷 v2. v1(R1 초안)에서 활동별 '부서'를 없애고(스윔레인은 담당자 기준으로 바뀜) 'Input'/'Output'을 추가했다.
+ * 이 변경 이후로는 R2·R3에서 필드를 "추가"만 하고 기존 필드 의미는 바꾸지 않는다.
  */
 
 export const FORMAT = 'pi-canvas'
-export const FORMAT_VERSION = 1
-export const APP_VERSION = 'R1'
+export const FORMAT_VERSION = 2
+export const APP_VERSION = 'R2'
 
 export type ActivityKind = 'task' | 'decision'
 
@@ -19,10 +20,11 @@ export interface NextLink {
 export interface Activity {
   id: string
   kind: ActivityKind
-  dept: string
   performer: string
   name: string
   tools: string[]
+  input: string
+  output: string
   next: NextLink[]
   note: string
 }
@@ -74,7 +76,7 @@ export function newId(): string {
 }
 
 export function emptyActivity(): Activity {
-  return { id: newId(), kind: 'task', dept: '', performer: '', name: '', tools: [], next: [], note: '' }
+  return { id: newId(), kind: 'task', performer: '', name: '', tools: [], input: '', output: '', next: [], note: '' }
 }
 
 export function newDoc(templateId: string): PiDoc {
@@ -94,7 +96,10 @@ export function newDoc(templateId: string): PiDoc {
 }
 
 export function isBlankActivity(a: Activity): boolean {
-  return !a.dept.trim() && !a.performer.trim() && !a.name.trim() && a.tools.length === 0 && a.next.length === 0 && !a.note.trim()
+  return (
+    !a.performer.trim() && !a.name.trim() && a.tools.length === 0 &&
+    !a.input.trim() && !a.output.trim() && a.next.length === 0 && !a.note.trim()
+  )
 }
 
 // ───────────────────────── 다음 단계 텍스트 ↔ 링크 ─────────────────────────
@@ -126,6 +131,11 @@ export function formatNext(next: NextLink[], idToSeq: Map<string, number>): stri
       return n.label ? `${n.label}→${target}` : target
     })
     .join(', ')
+}
+
+/** L1–L3 참조가 현재 config/설정.md 체계에 실제로 존재하는 항목인지 찾는다. 직접 입력(code === '')은 항상 유효하다. */
+export function findTaxNode(list: TaxNode[] | undefined, ref: TaxRef | null): TaxNode | undefined {
+  return ref?.code ? list?.find((n) => n.code === ref.code) : undefined
 }
 
 export function seqMaps(activities: Activity[]) {
@@ -198,6 +208,14 @@ export function validate(doc: PiDoc): Issue[] {
   if (!doc.meta.dept.trim()) warn('소속을 입력하세요.', 'meta.dept')
   const { l1, l2, l3 } = doc.taxonomy
   if (!l1?.name.trim() || !l2?.name.trim() || !l3?.name.trim()) warn('L1–L3 프로세스를 선택하세요.', 'tax.l1')
+  else {
+    // 파일 저장 이후 config/설정.md 체계가 바뀌었을 수 있다 — 코드가 더 이상 존재하지 않으면 다시 확인해야 한다
+    const n1 = findTaxNode(TAXONOMY.tree, l1)
+    const n2 = findTaxNode(n1?.children, l2)
+    const n3 = findTaxNode(n2?.children, l3)
+    if ((l1.code && !n1) || (l2.code && !n2) || (l3.code && !n3))
+      warn('L1–L3 체계가 변경되었습니다. 선택한 프로세스를 다시 확인하세요.', 'tax.l1')
+  }
   const p = doc.process
   if (!p.name.trim()) warn('L4 프로세스명을 입력하세요.', 'process.name')
   if (!p.startEvent.trim()) warn('E2E 시작(트리거)을 입력하세요.', 'process.startEvent')
@@ -213,11 +231,11 @@ export function validate(doc: PiDoc): Issue[] {
     hint(`L5 활동이 ${filled.length}개입니다. ${RECOMMENDED_MAX}개가 넘으면 L4를 둘로 나누는 것을 검토해 보세요.`, 'row.name', filled[filled.length - 1].id)
 
   const { idToSeq } = seqMaps(rows)
+  const validIds = new Set(rows.map((r) => r.id))
   rows.forEach((a) => {
     if (isBlankActivity(a)) return
     const seq = idToSeq.get(a.id)
     const at = `${seq}번:`
-    if (!a.dept.trim()) warn(`${at} 부서를 입력하세요.`, 'row.dept', a.id)
     if (!a.name.trim()) warn(`${at} 활동명을 입력하세요.`, 'row.name', a.id)
     const nh = activityNameHint(a.name)
     if (nh) hint(`${at} ${nh}`, 'row.name', a.id)
@@ -225,6 +243,7 @@ export function validate(doc: PiDoc): Issue[] {
     for (const n of a.next) {
       if (n.to.startsWith('?')) warn(`${at} 다음 단계 "${n.to.slice(1)}"번이 없습니다.`, 'row.next', a.id)
       else if (n.to === a.id) warn(`${at} 다음 단계가 자기 자신을 가리킵니다.`, 'row.next', a.id)
+      else if (n.to !== END && !validIds.has(n.to)) warn(`${at} 다음 단계가 삭제된 행을 가리킵니다.`, 'row.next', a.id)
     }
     if (a.kind === 'decision') {
       if (a.next.length < 2) warn(`${at} 판단 행은 조건별 다음 단계가 2개 이상 필요합니다. 예: 승인→${(seq ?? 0) + 1}, 반려→1`, 'row.next', a.id)
