@@ -60,7 +60,7 @@ export function deserialize(text: string): PiDoc {
       createdAt: str(m.createdAt) || new Date().toISOString(),
       updatedAt: str(m.updatedAt), appVersion: str(m.appVersion),
     },
-    taxonomy: { templateId: str(t.templateId), l1: taxRef(t.l1), l2: taxRef(t.l2), l3: taxRef(t.l3) },
+    taxonomy: { templateId: str(t.templateId), l1: taxRef(t.l1), l2: taxRef(t.l2), l3: taxRef(t.l3), l4: taxRef(t.l4) },
     process: {
       name: str(p.name), startEvent: str(p.startEvent), endEvent: str(p.endEvent), customer: str(p.customer),
       owner: str(p.owner), frequency: str(p.frequency), description: str(p.description),
@@ -73,9 +73,9 @@ export function deserialize(text: string): PiDoc {
 
 export function suggestFileName(doc: PiDoc, ext = 'json'): string {
   const clean = (s: string) => s.trim().replace(/[\\/:*?"<>|\s]+/g, '_').replace(/^_+|_+$/g, '')
-  const l4 = clean(doc.process.name) || 'L4프로세스'
+  const l5 = clean(doc.process.name) || 'L5프로세스'
   const who = clean(doc.meta.author) || '이름없음'
-  return `${l4}_${who}.${ext}`
+  return `${l5}_${who}.${ext}`
 }
 
 export function downloadText(text: string, fileName: string) {

@@ -50,9 +50,10 @@ export interface PiDoc {
     l1: TaxRef | null
     l2: TaxRef | null
     l3: TaxRef | null
+    l4: TaxRef | null // 직접 입력 (code 없음)
   }
   process: {
-    name: string
+    name: string // L5 주요 Task
     startEvent: string
     endEvent: string
     customer: string
@@ -85,7 +86,7 @@ export function newDoc(templateId: string): PiDoc {
     format: FORMAT,
     version: FORMAT_VERSION,
     meta: { author: '', dept: '', job: '', createdAt: now, updatedAt: now, appVersion: APP_VERSION },
-    taxonomy: { templateId, l1: null, l2: null, l3: null },
+    taxonomy: { templateId, l1: null, l2: null, l3: null, l4: null },
     process: {
       name: '', startEvent: '', endEvent: '', customer: '', owner: '', frequency: '', description: '',
       activities: [emptyActivity(), emptyActivity(), emptyActivity()],
@@ -204,31 +205,25 @@ export function validate(doc: PiDoc): Issue[] {
   const warn = (message: string, field: string, rowId?: string) => issues.push({ level: 'warn', message, field, rowId })
   const hint = (message: string, field: string, rowId?: string) => issues.push({ level: 'hint', message, field, rowId })
 
-  if (!doc.meta.author.trim()) warn('작성자 이름을 입력하세요.', 'meta.author')
-  if (!doc.meta.dept.trim()) warn('소속을 입력하세요.', 'meta.dept')
+  // L1–L5 는 선택 입력. 다만 파일 저장 이후 config/설정.md 체계가 바뀌었을 수 있다 — 고른 코드가 더 이상 존재하지 않으면 다시 확인해야 한다
   const { l1, l2, l3 } = doc.taxonomy
-  if (!l1?.name.trim() || !l2?.name.trim() || !l3?.name.trim()) warn('L1–L3 프로세스를 선택하세요.', 'tax.l1')
-  else {
-    // 파일 저장 이후 config/설정.md 체계가 바뀌었을 수 있다 — 코드가 더 이상 존재하지 않으면 다시 확인해야 한다
-    const n1 = findTaxNode(TAXONOMY.tree, l1)
-    const n2 = findTaxNode(n1?.children, l2)
-    const n3 = findTaxNode(n2?.children, l3)
-    if ((l1.code && !n1) || (l2.code && !n2) || (l3.code && !n3))
-      warn('L1–L3 체계가 변경되었습니다. 선택한 프로세스를 다시 확인하세요.', 'tax.l1')
-  }
+  const n1 = l1 && findTaxNode(TAXONOMY.tree, l1)
+  const n2 = l2 && findTaxNode(n1?.children, l2)
+  const n3 = l3 && findTaxNode(n2?.children, l3)
+  if ((l1?.code && !n1) || (l2?.code && !n2) || (l3?.code && !n3))
+    warn('L1–L3 체계가 변경되었습니다. 선택한 프로세스를 다시 확인하세요.', 'tax.l1')
   const p = doc.process
-  if (!p.name.trim()) warn('L4 프로세스명을 입력하세요.', 'process.name')
-  if (!p.startEvent.trim()) warn('E2E 시작(트리거)을 입력하세요.', 'process.startEvent')
-  if (!p.endEvent.trim()) warn('E2E 종료(결과)를 입력하세요.', 'process.endEvent')
+  if (!p.startEvent.trim()) warn('Process 시작(트리거)을 입력하세요.', 'process.startEvent')
+  if (!p.endEvent.trim()) warn('Process 종료(결과)를 입력하세요.', 'process.endEvent')
   if (!p.customer.trim()) warn('고객을 입력하세요.', 'process.customer')
 
   const rows = p.activities
   const filled = rows.filter((a) => !isBlankActivity(a))
-  if (filled.length === 0) warn('L5 활동을 한 개 이상 입력하세요.', 'row.name', rows[0]?.id)
+  if (filled.length === 0) warn('L6 활동을 한 개 이상 입력하세요.', 'row.name', rows[0]?.id)
   else if (filled.length < RECOMMENDED_MIN)
-    hint(`L5 활동이 ${filled.length}개입니다. 권장 분량은 ${RECOMMENDED_MIN}–${RECOMMENDED_MAX}개입니다 (너무 적으면 L4 범위가 좁은지 확인).`, 'row.name', filled[filled.length - 1].id)
+    hint(`L6 활동이 ${filled.length}개입니다. 권장 분량은 ${RECOMMENDED_MIN}–${RECOMMENDED_MAX}개입니다 (너무 적으면 L5 범위가 좁은지 확인).`, 'row.name', filled[filled.length - 1].id)
   else if (filled.length > RECOMMENDED_MAX)
-    hint(`L5 활동이 ${filled.length}개입니다. ${RECOMMENDED_MAX}개가 넘으면 L4를 둘로 나누는 것을 검토해 보세요.`, 'row.name', filled[filled.length - 1].id)
+    hint(`L6 활동이 ${filled.length}개입니다. ${RECOMMENDED_MAX}개가 넘으면 L5를 둘로 나누는 것을 검토해 보세요.`, 'row.name', filled[filled.length - 1].id)
 
   const { idToSeq } = seqMaps(rows)
   const validIds = new Set(rows.map((r) => r.id))

@@ -435,7 +435,7 @@ export default function App() {
 
           <section className="card">
             <div className="card-title-row">
-              <h2 className="card-title"><span className="step">3</span>L5 활동 목록</h2>
+              <h2 className="card-title"><span className="step">3</span>L6 활동 목록</h2>
               <div className="card-tools">
                 <span className="muted small">엑셀 범위를 복사해 칸에 붙여넣으면 여러 행을 한 번에 가져옵니다</span>
                 <button type="button" onClick={() => setPasteText('')}>표 붙여넣기</button>
@@ -466,7 +466,7 @@ export default function App() {
           <div className="card sticky">
             <h2 className="card-title small">작성 현황</h2>
             <dl className="stats">
-              <div><dt>L5 활동</dt><dd>{filled.length}<small>개</small></dd></div>
+              <div><dt>L6 활동</dt><dd>{filled.length}<small>개</small></dd></div>
               <div><dt>담당자(레인)</dt><dd>{lanes.size}<small>개</small></dd></div>
               <div><dt>판단</dt><dd>{decisions}<small>개</small></dd></div>
             </dl>

@@ -181,7 +181,7 @@ export function parseSettings(md: string): ParseResult {
           if (indentStack[indentStack.length - 1] !== indent) return err('들여쓰기가 위 줄들과 맞지 않습니다.')
         }
         const level = indentStack.length
-        if (level > 3) return err('L3 보다 깊게 들여쓸 수 없습니다 (L4 는 교육생이 직접 씁니다).')
+        if (level > 3) return err('L3 보다 깊게 들여쓸 수 없습니다 (L4·L5 는 교육생이 직접 씁니다).')
 
         const { name, code } = nameAndCode(text)
         if (!name) return err('이름이 비어 있습니다.')

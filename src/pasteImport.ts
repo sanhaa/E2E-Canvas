@@ -26,7 +26,7 @@ const HEADER_WORDS: [ColumnRole, RegExp][] = [
   ['output', /^(output|출력|산출물?)$/i],
   ['next', /^(다음|다음\s*단계|next|연결|후속(\s*단계)?)$/i],
   ['note', /^(비고|메모|note|이슈|참고|코멘트)$/i],
-  ['name', /^(활동|활동명|업무|업무명|activity|task|l5|l5\s*활동|내용|업무\s*내용|프로세스|프로세스명|설명|description)$/i],
+  ['name', /^(활동|활동명|업무|업무명|activity|task|l[56]|l[56]\s*활동|내용|업무\s*내용|프로세스|프로세스명|설명|description)$/i],
 ]
 
 /** 엑셀 복사 텍스트(TSV) 파서. 셀 안 줄바꿈·탭이 있으면 엑셀이 큰따옴표로 감싸는 규칙을 처리한다. */
@@ -138,7 +138,7 @@ function bodyOf(rows: string[][], guess: PasteGuess): string[][] {
   return guess.hasHeader ? rows.slice(1) : rows
 }
 
-// "Task별 프로세스 정리 양식"처럼 순번 칸에 '시작'/'종료'라고 적힌 행 — L5 활동이 아니라 E2E 시작/종료 문구다.
+// "Task별 프로세스 정리 양식"처럼 순번 칸에 '시작'/'종료'라고 적힌 행 — L6 활동이 아니라 Process 시작/종료 문구다.
 const START_ROW = /^(시작|start)$/i
 const END_ROW = /^(종료|끝|end)$/i
 const isEventRow = (seqCell: string) => START_ROW.test(seqCell) || END_ROW.test(seqCell)
@@ -165,7 +165,7 @@ function splitDescription(text: string): { name: string; nextText: string } {
   return { name: nameLines.join(' '), nextText: tokens.join(', ') }
 }
 
-/** '시작'/'종료' 행이 있으면 그 설명 문구를 E2E 시작(트리거)·종료(결과)로 뽑아낸다. */
+/** '시작'/'종료' 행이 있으면 그 설명 문구를 Process 시작(트리거)·종료(결과)로 뽑아낸다. */
 export function extractEvents(rows: string[][], guess: PasteGuess): { startEvent: string; endEvent: string } {
   if (!guess.roles.includes('seq')) return { startEvent: '', endEvent: '' }
   const col = makeCol(guess)
@@ -182,7 +182,7 @@ export function extractEvents(rows: string[][], guess: PasteGuess): { startEvent
 
 /**
  * 표 → 활동 목록. "다음 단계"의 순번은 붙여넣은 표 기준(순번 열이 있으면 그 값, 없으면 1부터)으로 해석한다.
- * 순번 칸이 '시작'/'종료'인 행은 활동이 아니라 E2E 시작·종료 문구이므로 여기서는 제외한다 (extractEvents 참고).
+ * 순번 칸이 '시작'/'종료'인 행은 활동이 아니라 Process 시작·종료 문구이므로 여기서는 제외한다 (extractEvents 참고).
  */
 export function rowsToActivities(rows: string[][], guess: PasteGuess): Activity[] {
   const col = makeCol(guess)

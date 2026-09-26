@@ -125,7 +125,7 @@ export function CanvasPanel(props: Props) {
       <aside className="fx-panel">
         <h3>{start ? '시작 이벤트' : '종료 이벤트'}</h3>
         <label className="field">
-          <span>{start ? 'E2E 시작 (트리거)' : 'E2E 종료 (결과)'}</span>
+          <span>{start ? 'Process 시작 (트리거)' : 'Process 종료 (결과)'}</span>
           <textarea rows={3} value={doc.process[key]} onChange={(e) => props.onProcess({ [key]: e.target.value })} />
         </label>
         <p className="muted small">

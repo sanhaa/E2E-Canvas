@@ -138,9 +138,15 @@ input::placeholder, textarea::placeholder { color: #a8afbd; }
 .tax-level select { min-width: 130px; }
 .tax-custom { width: 140px; }
 .tax-tag { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--line-2); border-radius: 5px; padding: 2px 6px; }
-.tax-tag.l4 { background: var(--brand); color: #fff; }
+.tax-tag.l5 { background: var(--brand); color: #fff; font-size: 12px; padding: 3px 8px; }
 .tax-sep { color: #b5bccb; font-size: 18px; }
-.l4-input { flex: 1; font-weight: 600; border-color: #b8c7ef; }
+.tax-free { flex: 1; min-width: 0; }
+.card-note { font-size: 12px; font-weight: 400; color: var(--muted); }
+/* L5 주요 Task — 2번 메뉴에서 가장 눈에 띄는 칸 */
+.l5-box { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; padding: 12px 14px; border: 1.5px solid #b8c7ef; border-radius: 10px; background: #f3f6fe; }
+.l5-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.l5-head b { font-size: 14px; }
+.l5-input { width: 100%; box-sizing: border-box; font-size: 16px; font-weight: 600; padding: 9px 12px; border-color: #8fa6e6; background: #fff; }
 
 /* ── 활동 표 ── */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }

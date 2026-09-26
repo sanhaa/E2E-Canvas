@@ -37,7 +37,17 @@ describe('다음 단계 파싱', () => {
 describe('검증', () => {
   it('빈 문서는 필수 항목 경고를 낸다', () => {
     const msgs = validate(newDoc('t')).filter((i) => i.level === 'warn').map((i) => i.field)
-    expect(msgs).toEqual(expect.arrayContaining(['meta.author', 'meta.dept', 'tax.l1', 'process.name', 'process.startEvent', 'process.endEvent', 'process.customer']))
+    expect(msgs).toEqual(expect.arrayContaining(['process.startEvent', 'process.endEvent', 'process.customer']))
+    expect(msgs).not.toEqual(expect.arrayContaining(['meta.author']))
+    expect(msgs).not.toEqual(expect.arrayContaining(['meta.dept']))
+  })
+
+  it('작성자·L1–L5 는 선택 입력이라 비워도 경고하지 않는다', () => {
+    const d = exampleDoc()
+    d.meta = { ...d.meta, author: '', dept: '' }
+    d.taxonomy = { ...d.taxonomy, l1: null, l2: null, l3: null, l4: null }
+    d.process.name = ''
+    expect(validate(d).filter((i) => i.level === 'warn')).toEqual([])
   })
 
   it('예시 문서는 경고가 없다', () => {
